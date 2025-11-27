@@ -18,25 +18,21 @@ const app = express();
    FCC requires strict CSP in production, but MUST disable CSP
    during tests because the test runner uses origin=null.
 =============================================================== */
-if (process.env.NODE_ENV === 'test') {
-  app.use(
-    helmet({
-      contentSecurityPolicy: false,
-    })
-  );
-} else {
-  app.use(
-    helmet.contentSecurityPolicy({
-      useDefaults: true,
+const helmet = require('helmet');
+
+app.use(
+  helmet({
+    contentSecurityPolicy: {
       directives: {
-        "default-src": ["'self'"],
-        "script-src": ["'self'"],
-        "style-src": ["'self'"],
-        "img-src": ["'self'", "data:"]
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        imgSrc: ["'self'", "data:"]
       }
-    })
-  );
-}
+    }
+  })
+);
+
 
 /* ============================================================
    🌐 CORS
