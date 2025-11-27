@@ -4,7 +4,7 @@ const axios = require("axios");
 const Stock = require("../models/Stock");
 
 /* ============================================================
-   📌 FCC REQUIRES:
+   📌 FCC REQUIREMENTS:
    • GET /api/stock-prices?stock=GOOG
    • Optional like=true
    • Array when 2 stocks are passed
@@ -23,19 +23,19 @@ module.exports = function (app) {
       const clientIP = getHashedIP(req.ip);
 
       /* ==========================================
-         📌 Get stock price from FCC proxy
+         📌 Fetch stock price from FCC proxy
       ========================================== */
       async function fetchPrice(symbol) {
         const url = `https://stock-price-checker-proxy.freecodecamp.rocks/v1/stock/${symbol}/quote`;
         const r = await axios.get(url);
         return {
-          symbol: r.data.symbol,
-          price: r.data.latestPrice
+          symbol: r.data.symbol.toUpperCase(),
+          price: Number(r.data.latestPrice)
         };
       }
 
       /* ==========================================
-         📌 Handle like logic
+         📌 Handle likes logic
       ========================================== */
       async function handleLikes(symbol) {
         let record = await Stock.findOne({ stock: symbol });
@@ -108,13 +108,13 @@ const testIPMap = {};
 
 function getHashedIP(ip) {
   if (process.env.NODE_ENV === "test") {
-    // FCC uses different iframes -> must stabilize IP
+    // Stabilize IP for FCC tests
     if (!testIPMap[ip]) {
       testIPMap[ip] = Math.random().toString(36).slice(2);
     }
     return testIPMap[ip];
   }
 
-  // Real IP → mask last octet for privacy
+  // Mask last octet for privacy
   return ip.replace(/\d+$/, "0");
 }
