@@ -3,45 +3,30 @@
 const axios = require("axios");
 const Stock = require("../models/Stock");
 
-/* ============================================================
-   📌 FCC REQUIREMENTS:
-   • GET /api/stock-prices?stock=GOOG
-   • Optional like=true
-   • Array when 2 stocks are passed
-   • rel_likes for 2 stocks
-=============================================================== */
-
 module.exports = function (app) {
-  app.route("/api/stock-prices").get(async function (req, res) {
+  app.route("/api/stock-prices").get(async (req, res) => {
     try {
       let { stock, like } = req.query;
       if (!stock) return res.json({ error: "stock symbol required" });
 
       const isArray = Array.isArray(stock);
       const stocks = isArray ? stock.map(s => s.toUpperCase()) : [stock.toUpperCase()];
-
       const clientIP = getHashedIP(req.ip);
 
-      /* ==========================================
-         📌 Fetch stock price from FCC proxy
-      ========================================== */
-      async function fetchPrice(symbol) {
+      // Fetch stock price
+      const fetchPrice = async (symbol) => {
         const url = `https://stock-price-checker-proxy.freecodecamp.rocks/v1/stock/${symbol}/quote`;
         const r = await axios.get(url);
         return {
           symbol: r.data.symbol.toUpperCase(),
           price: Number(r.data.latestPrice)
         };
-      }
+      };
 
-      /* ==========================================
-         📌 Handle likes logic
-      ========================================== */
-      async function handleLikes(symbol) {
+      // Handle likes logic
+      const handleLikes = async (symbol) => {
         let record = await Stock.findOne({ stock: symbol });
-        if (!record) {
-          record = new Stock({ stock: symbol, likes: 0, ips: [] });
-        }
+        if (!record) record = new Stock({ stock: symbol, likes: 0, ips: [] });
 
         if (like === "true" || like === true) {
           if (!record.ips.includes(clientIP)) {
@@ -52,11 +37,8 @@ module.exports = function (app) {
 
         await record.save();
         return record.likes;
-      }
+      };
 
-      /* ==========================================
-         📌 SINGLE STOCK
-      ========================================== */
       if (!isArray) {
         const data = await fetchPrice(stocks[0]);
         const likes = await handleLikes(data.symbol);
@@ -65,19 +47,14 @@ module.exports = function (app) {
           stockData: {
             stock: data.symbol,
             price: data.price,
-            likes: likes
+            likes
           }
         });
       }
 
-      /* ==========================================
-         📌 DOUBLE STOCK (2 stocks only)
-      ========================================== */
-      const dataA = await fetchPrice(stocks[0]);
-      const dataB = await fetchPrice(stocks[1]);
-
-      const likesA = await handleLikes(dataA.symbol);
-      const likesB = await handleLikes(dataB.symbol);
+      // Two stocks
+      const [dataA, dataB] = await Promise.all(stocks.map(fetchPrice));
+      const [likesA, likesB] = await Promise.all([handleLikes(dataA.symbol), handleLikes(dataB.symbol)]);
 
       return res.json({
         stockData: [
@@ -101,20 +78,14 @@ module.exports = function (app) {
   });
 };
 
-/* ============================================================
-   🔐 IP HASHING LOGIC (FCC Requires Unique IP Per Like)
-=============================================================== */
+// IP hashing logic
 const testIPMap = {};
 
 function getHashedIP(ip) {
   if (process.env.NODE_ENV === "test") {
-    // Stabilize IP for FCC tests
-    if (!testIPMap[ip]) {
-      testIPMap[ip] = Math.random().toString(36).slice(2);
-    }
+    // Always return same hash for same IP
+    if (!testIPMap[ip]) testIPMap[ip] = Math.random().toString(36).slice(2);
     return testIPMap[ip];
   }
-
-  // Mask last octet for privacy
   return ip.replace(/\d+$/, "0");
 }
