@@ -18,7 +18,6 @@ const app = express();
    FCC requires strict CSP in production, but MUST disable CSP
    during tests because the test runner uses origin=null.
 =============================================================== */
-const helmet = require('helmet');
 
 app.use(
   helmet({
