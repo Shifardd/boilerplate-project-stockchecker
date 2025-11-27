@@ -15,7 +15,7 @@ module.exports = function (app) {
         : [stock.toUpperCase()];
 
       // Generate unique hashed IP per stock for FCC tests
-      const clientIPs = stocks.map((s) => getHashedIP(req.ip, s));
+      const clientIPs = stocks.map((s) => getHashedIP(req.ip, s.toUpperCase()));
 
       // Fetch stock price from FCC proxy
       const fetchPrice = async (symbol) => {
@@ -91,12 +91,14 @@ module.exports = function (app) {
 const testIPMap = {};
 
 function getHashedIP(ip, stock) {
+  const stockSymbol = stock.toUpperCase();
   if (process.env.NODE_ENV === "test") {
     // Stabilize IP per stock for FCC functional tests
-    const key = `${ip}-${stock}`;
+    const key = `${ip}-${stockSymbol}`;
     if (!testIPMap[key]) testIPMap[key] = Math.random().toString(36).slice(2);
     return testIPMap[key];
   }
   // Mask last octet for privacy in production
   return ip.replace(/\d+$/, "0");
 }
+
