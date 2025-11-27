@@ -30,10 +30,15 @@ module.exports = function (app) {
       // Handle likes logic per stock
       const handleLikes = async (symbol, clientIP) => {
         let record = await Stock.findOne({ stock: symbol });
-        if (!record) record = new Stock({ stock: symbol, likes: 0, ips: [] });
 
-        // 🔹 Ensure ips array exists to prevent .includes() errors
-        if (!Array.isArray(record.ips)) record.ips = [];
+        if (!record) {
+          record = new Stock({ stock: symbol, likes: 0, ips: [] });
+        }
+
+        // Ensure ips array exists
+        if (!Array.isArray(record.ips)) {
+          record.ips = [];
+        }
 
         if (like === "true" || like === true) {
           if (!record.ips.includes(clientIP)) {
@@ -45,6 +50,7 @@ module.exports = function (app) {
         await record.save();
         return record.likes;
       };
+
 
       if (!isArray) {
         const data = await fetchPrice(stocks[0]);
