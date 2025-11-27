@@ -13,10 +13,10 @@ suite("Functional Tests", function () {
   /* ==============================
      1. Viewing one stock
   ============================== */
-  test("Viewing one stock: GET /api/stock-prices", function (done) {
+  test("Viewing one stock: GET /api/stock-prices/", function (done) {
     chai
       .request(server)
-      .get("/api/stock-prices")
+      .get("/api/stock-prices/") // trailing slash added
       .query({ stock: "GOOG" })
       .end(function (err, res) {
         assert.equal(res.status, 200);
@@ -33,10 +33,10 @@ suite("Functional Tests", function () {
   /* ===========================================
      2. Viewing one stock and liking it once
   =========================================== */
-  test("Viewing one stock and liking it: GET /api/stock-prices", function (done) {
+  test("Viewing one stock and liking it: GET /api/stock-prices/", function (done) {
     chai
       .request(server)
-      .get("/api/stock-prices")
+      .get("/api/stock-prices/") // trailing slash added
       .query({ stock: "GOOG", like: true })
       .end(function (err, res) {
         assert.equal(res.status, 200);
@@ -51,10 +51,10 @@ suite("Functional Tests", function () {
   /* ==========================================================
      3. Viewing the same stock and liking it again (no change)
   ========================================================== */
-  test("Viewing same stock and liking it again: GET /api/stock-prices", function (done) {
+  test("Viewing same stock and liking it again: GET /api/stock-prices/", function (done) {
     chai
       .request(server)
-      .get("/api/stock-prices")
+      .get("/api/stock-prices/") // trailing slash added
       .query({ stock: "GOOG", like: true })
       .end(function (err, res) {
         assert.equal(res.status, 200);
@@ -71,10 +71,10 @@ suite("Functional Tests", function () {
   /* ==============================
      4. Viewing two stocks
   ============================== */
-  test("Viewing two stocks: GET /api/stock-prices", function (done) {
+  test("Viewing two stocks: GET /api/stock-prices/", function (done) {
     chai
       .request(server)
-      .get("/api/stock-prices")
+      .get("/api/stock-prices/") // trailing slash added
       .query({ stock: ["GOOG", "MSFT"] })
       .end(function (err, res) {
         assert.equal(res.status, 200);
@@ -98,10 +98,10 @@ suite("Functional Tests", function () {
   /* ==============================================
      5. Viewing two stocks and liking them
   ============================================== */
-  test("Viewing two stocks and liking them: GET /api/stock-prices", function (done) {
+  test("Viewing two stocks and liking them: GET /api/stock-prices/", function (done) {
     chai
       .request(server)
-      .get("/api/stock-prices")
+      .get("/api/stock-prices/") // trailing slash added
       .query({ stock: ["GOOG", "MSFT"], like: true })
       .end(function (err, res) {
         assert.equal(res.status, 200);
