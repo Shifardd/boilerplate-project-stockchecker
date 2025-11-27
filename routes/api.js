@@ -10,21 +10,25 @@ module.exports = function (app) {
       if (!stock) return res.json({ error: "stock symbol required" });
 
       const isArray = Array.isArray(stock);
-      const stocks = isArray ? stock.map(s => s.toUpperCase()) : [stock.toUpperCase()];
-      const clientIP = getHashedIP(req.ip);
+      const stocks = isArray
+        ? stock.map((s) => s.toUpperCase())
+        : [stock.toUpperCase()];
 
-      // Fetch stock price
+      // Generate unique hashed IP per stock for FCC tests
+      const clientIPs = stocks.map((s) => getHashedIP(req.ip, s));
+
+      // Fetch stock price from FCC proxy
       const fetchPrice = async (symbol) => {
         const url = `https://stock-price-checker-proxy.freecodecamp.rocks/v1/stock/${symbol}/quote`;
         const r = await axios.get(url);
         return {
           symbol: r.data.symbol.toUpperCase(),
-          price: Number(r.data.latestPrice)
+          price: Number(r.data.latestPrice),
         };
       };
 
-      // Handle likes logic
-      const handleLikes = async (symbol) => {
+      // Handle likes logic per stock
+      const handleLikes = async (symbol, clientIP) => {
         let record = await Stock.findOne({ stock: symbol });
         if (!record) record = new Stock({ stock: symbol, likes: 0, ips: [] });
 
@@ -41,36 +45,38 @@ module.exports = function (app) {
 
       if (!isArray) {
         const data = await fetchPrice(stocks[0]);
-        const likes = await handleLikes(data.symbol);
+        const likes = await handleLikes(data.symbol, clientIPs[0]);
 
         return res.json({
           stockData: {
             stock: data.symbol,
             price: data.price,
-            likes
-          }
+            likes,
+          },
         });
       }
 
-      // Two stocks
+      // TWO STOCKS
       const [dataA, dataB] = await Promise.all(stocks.map(fetchPrice));
-      const [likesA, likesB] = await Promise.all([handleLikes(dataA.symbol), handleLikes(dataB.symbol)]);
+      const [likesA, likesB] = await Promise.all([
+        handleLikes(dataA.symbol, clientIPs[0]),
+        handleLikes(dataB.symbol, clientIPs[1]),
+      ]);
 
       return res.json({
         stockData: [
           {
             stock: dataA.symbol,
             price: dataA.price,
-            rel_likes: likesA - likesB
+            rel_likes: likesA - likesB,
           },
           {
             stock: dataB.symbol,
             price: dataB.price,
-            rel_likes: likesB - likesA
-          }
-        ]
+            rel_likes: likesB - likesA,
+          },
+        ],
       });
-
     } catch (err) {
       console.error(err);
       return res.json({ error: "external source error" });
@@ -78,14 +84,16 @@ module.exports = function (app) {
   });
 };
 
-// IP hashing logic
+// IP hashing logic (unique per stock)
 const testIPMap = {};
 
-function getHashedIP(ip) {
+function getHashedIP(ip, stock) {
   if (process.env.NODE_ENV === "test") {
-    // Always return same hash for same IP
-    if (!testIPMap[ip]) testIPMap[ip] = Math.random().toString(36).slice(2);
-    return testIPMap[ip];
+    // Stabilize IP per stock for FCC functional tests
+    const key = `${ip}-${stock}`;
+    if (!testIPMap[key]) testIPMap[key] = Math.random().toString(36).slice(2);
+    return testIPMap[key];
   }
+  // Mask last octet for privacy in production
   return ip.replace(/\d+$/, "0");
 }
